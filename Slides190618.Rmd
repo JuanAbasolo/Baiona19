@@ -1,0 +1,579 @@
+---
+title: 'Indusketa dialektometrian'
+output:
+  revealjs::revealjs_presentation:
+    theme: white # serif solarized moon night black league 
+    highlight: pygments
+    # transition: fade
+    # incremental: true
+    center: true
+    progress: true
+---
+
+<style>
+.slide-background:first-child {
+  background-color: #766860;
+}
+</style>
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+```{css}
+<style>
+ .col2 {
+  columns: 2 200px;
+  -webkit-columns: 2 200px;
+  -moz-columns: 2 200px
+ }
+ .col3 {
+  columns: 3 100px;
+  -webkit-columns: 3 100px;
+  -moz-columns: 3 100px
+ }
+ 
+</style>
+
+<style>
+ .colum-left {
+  float: left;
+  width 33%;
+  text-align: left;
+ }
+ .colum-center {
+  display: inline-block;
+  width 33%;
+  text-align: center;
+ }
+ .colum-right {
+  float: right;
+  width 33%;
+  text-align: center;
+ }
+</style>
+```
+
+```{r egokitu, message=FALSE}
+require(factoextra)
+require(FactoMineR)
+require(diaMeasures)
+require(fastDummies)
+require(plot3D)
+require(reshape2)
+require(scales)
+require(scatterplot3d)
+require(rgdal)
+require(sp)
+require(RColorBrewer)
+require(rgl)
+
+# require(gridExtra)
+# require(leaflet)
+# require(reshape2)
+# require(rgl)
+
+## Datuak sartu
+dtk.brcz <- read.table('data/raw/bourciez-taulazabalduan-b.csv', sep = ',', header = T)
+names(dtk.brcz) <- read.table('data/raw/bourciez-taulazabalduan-b.csv', sep = ',', stringsAsFactors = F)[1,]
+row.names(dtk.brcz) <- dtk.brcz[,1] 
+dtk.brcz <- dtk.brcz[,-1]
+# NA gehiegi daukaz Hendaiak
+dtk.brcz <- dtk.brcz[-which(row.names(dtk.brcz)=="Hendaia"),]
+
+## Mapa Sartu
+mapi <- suppressMessages(readOGR('data/maps/EH_Udalerriak-Barri/udalerriak_EH_berriaB.shp', verbose = FALSE))
+
+# Koloreak esleitu
+cols <- brewer.pal(8, 'Set1')
+
+```
+
+## Nondik nora  {data-background=#0061a9}
+
+<div class="col3">
+<div class="column-left">
+> - Oinarrizkoak
+> - Interpretazioa
+> - Goebl-en analisiak
+</div>
+
+<div class="column-center">
+> - Dimentsio Anitzetako Analisia
+> - MCA. Elementuei datxekien analisia
+</div>
+
+<div class="column-right">
+> - MDS
+> - MDS eta MCA
+</div>
+</div>
+
+# Oinarrizkoak  {data-background=#dddddd}
+
+## {data-background=#dddddd}
+
+```{r inor, echo=FALSE}
+##  Inor izenordain zehaztugabea 
+
+mapi@data$inor <- NA
+
+for(i in row.names(dtk.brcz)){
+        # print(i)
+        mapi@data[mapi@data$IZ_EUSKAL==i, 'inor'] <- as.character(dtk.brcz[i, '\"Inor\" izenordain zehaztugabea'])
+}
+mapi@data$inor <- factor(mapi@data$inor)
+# mapi@data$inor[is.na(mapi@data$inor)] <- 1
+##
+
+plot(mapi, col=ifelse(is.na(mapi@data$inor), 1, cols[as.numeric(mapi@data$inor)]),
+     main = 'Inor emateko moduak Bourciezen datuetan')
+# mapi@data$inor <- factor(mapi@data$inor, levels = levels(dtk.brcz$inor))
+legend("bottomleft",
+       legend = levels(mapi@data$inor),
+       title = 'formak',
+       col = cols[1:length(levels(mapi@data$inor))],
+       pch = 20)
+```
+
+##  {data-background=#dddddd}
+
+```{r zarata, echo=FALSE}
+# par(mfrow = c(2,2))
+mapi@data$bruit <- NA
+
+for(i in row.names(dtk.brcz)){
+        # print(i)
+        mapi@data[mapi@data$IZ_EUSKAL==i, 'bruit'] <- dtk.brcz[i, "bruit"]
+}
+
+#
+
+plot(mapi, col=ifelse(is.na(mapi@data$bruit), 1, cols[as.numeric(mapi@data$bruit)]),
+     main = 'Frantsesezko bruit emateko moduak Bourciezen datuetan')
+mapi@data$bruit <- factor(mapi@data$bruit, levels = levels(dtk.brcz$bruit))
+legend("bottomleft",
+       legend = levels(mapi@data$bruit),
+       title = 'Formak',
+       col = cols[1:length(levels(mapi@data$bruit))],
+       pch = 20)
+# par(mfrow = c(1,1))
+```
+
+##  {data-background=#dddddd}
+
+```{r bait, echo=FALSE}
+# par(mfrow = c(2,2))
+mapi@data$bait<- NA
+
+for(i in row.names(dtk.brcz)){
+        # print(i)
+        mapi@data[mapi@data$IZ_EUSKAL==i, 'bait'] <- dtk.brcz[i, 18]
+}
+
+#
+
+plot(mapi, col=ifelse(is.na(mapi@data$bait), 1, cols[as.numeric(mapi@data$bait)]),
+     main = '\"bait\" Bourciezen datuetan')
+mapi@data$bait <- factor(mapi@data$bait, levels = levels(dtk.brcz[,18]))
+legend("bottomleft",
+       legend = levels(mapi@data$bait),
+       title = 'Formak',
+       col = cols[1:length(levels(mapi@data$bait))],
+       pch = 20)
+# par(mfrow = c(1,1))
+```
+
+##  {data-background=#CCCCCC}
+
+```{r auzia, echo=FALSE}
+# par(mfrow = c(2,2))
+mapi@data$au.ai <- NA
+
+for(i in row.names(dtk.brcz)){
+        # print(i)
+        mapi@data[mapi@data$IZ_EUSKAL==i, 'au.ai'] <- dtk.brcz[i, 17]
+}
+
+#
+
+plot(mapi, col=ifelse(is.na(mapi@data$au.ai), 1, cols[as.numeric(mapi@data$au.ai)]),
+     main = '\"au>ai\" aldaketa \'auzo\' moduko hitzetan Bourciezen datuetan')
+mapi@data$au.ai <- factor(mapi@data$au.ai, levels = levels(dtk.brcz[, 17]))
+legend("bottomleft",
+       legend = levels(mapi@data$au.ai),
+       title = 'Formak',
+       col = cols[1:length(levels(mapi@data$au.ai))],
+       pch = 20)
+# par(mfrow = c(1,1))
+```
+
+
+##  {data-background=#BBBBBB}
+
+```{r mahainea, echo=FALSE}
+# par(mfrow = c(2,2))
+mapi@data$mahai <- NA
+
+for(i in row.names(dtk.brcz)){
+        # print(i)
+        mapi@data[mapi@data$IZ_EUSKAL==i, 'mahai'] <- dtk.brcz[i, 26]
+}
+
+#
+
+plot(mapi, col=ifelse(is.na(mapi@data$mahai), 1, cols[as.numeric(mapi@data$mahai)]),
+     main = '\"Mahai\" hitzaren aldaerak')
+mapi@data$mahai <- factor(mapi@data$mahai, levels = levels(dtk.brcz[, 26]))
+legend("bottomleft",
+       legend = levels(mapi@data$mahai),
+       title = 'Formak',
+       col = cols[1:length(levels(mapi@data$mahai))],
+       pch = 20)
+# par(mfrow = c(1,1))
+```
+
+
+##  {data-background=#999999}
+
+```{r leiho, echo=FALSE}
+# par(mfrow = c(2,2))
+mapi@data$leiho <- NA
+
+for(i in row.names(dtk.brcz)){
+        # print(i)
+        mapi@data[mapi@data$IZ_EUSKAL==i, 'leiho'] <- dtk.brcz[i, 25]
+}
+
+#
+
+plot(mapi, col=ifelse(is.na(mapi@data$leiho), 1, cols[as.numeric(mapi@data$leiho)]),
+     main = '\"leiho\" hitzaren aldaerak')
+mapi@data$leiho <- factor(mapi@data$leiho, levels = levels(dtk.brcz[, 25]))
+legend("bottomleft",
+       legend = levels(mapi@data$leiho),
+       title = 'Formak',
+       col = cols[1:length(levels(mapi@data$leiho))],
+       pch = 20)
+# par(mfrow = c(1,1))
+```
+
+
+##  {data-background=#555555}
+
+```{r ü, echo=FALSE}
+# par(mfrow = c(2,2))
+mapi@data$ü <- NA
+
+for(i in row.names(dtk.brcz)){
+        # print(i)
+        mapi@data[mapi@data$IZ_EUSKAL==i, 'ü'] <- dtk.brcz[i, 36]
+}
+
+#
+
+plot(mapi, col=ifelse(is.na(mapi@data$ü), 1, cols[as.numeric(mapi@data$ü)]),
+     main = '\"ü/u\" soinua \'guti\' hitzean')
+mapi@data$ü <- factor(mapi@data$ü, levels = levels(dtk.brcz[, 36]))
+legend("bottomleft",
+       legend = levels(mapi@data$ü),
+       title = 'Formak',
+       col = cols[1:length(levels(mapi@data$ü))],
+       pch = 20)
+# par(mfrow = c(1,1))
+```
+
+
+
+##  {data-background=#111111}
+
+```{r zegoelarik, echo=FALSE}
+# par(mfrow = c(2,2))
+mapi@data$zegoelarik <- NA
+
+for(i in row.names(dtk.brcz)){
+        # print(i)
+        mapi@data[mapi@data$IZ_EUSKAL==i, 'zegoelarik'] <- dtk.brcz[i, 43]
+}
+
+#
+
+plot(mapi, col=ifelse(is.na(mapi@data$zegoelarik), 1, cols[as.numeric(mapi@data$zegoelarik)]),
+     main = '\"zegoelarik/u\" soinua \'guti\' hitzean')
+mapi@data$zegoelarik <- factor(mapi@data$zegoelarik, levels = levels(dtk.brcz[, 43]))
+legend("bottomleft",
+       legend = levels(mapi@data$zegoelarik),
+       title = 'Formak',
+       col = cols[1:length(levels(mapi@data$zegoelarik))],
+       pch = 20)
+# par(mfrow = c(1,1))
+```
+
+
+
+# Distantzi matrizeak {data-background=#f9f9c5}
+
+## Distantziak <br> formen artean Vs lemen artean {data-background=#ece2c6}
+
+<div class="col3"> 
+<div class="column-left">
+
+transkripzioen arteko distantziak
+
+*aita > aitta > atta > atxa > atxe*
+
+</div>
+<div class="column-center">
+ala
+</div>
+<div class="column-right">
+
+elementu bakanen identifikazioa
+
+*amama > amatxi > amona > amandrea*
+
+</div>
+</div>
+
+##  {data-background=#cbcba1}
+
+<small>
+```{r distantziak, warning=FALSE}
+## Datuen prestaketa
+dtk.tnp <- cbind(herria = row.names(dtk.brcz), dtk.brcz)
+names.bcrz <- names(dtk.tnp)
+
+dtk.bcrz.luze <- melt(dtk.tnp, id.vars = 'herria', variable.name = 'erantzunak')
+d.brcz <- as.dist(diaMeasures::diaMeasure(data = dtk.bcrz.luze, 
+                                  formula = herria~erantzunak, 
+                                  value.var = 'value',
+                                  measure = 'iri',
+                                  binaryIndex = 'dice'))
+
+dx <- as.matrix(d.brcz)[1:10,1:10]
+row.names(dx) <- row.names(dtk.brcz)[1:10]
+knitr::kable(dx, col.names = row.names(dtk.brcz)[1:10], row.names = T, digits = 2)
+
+```
+</small>
+
+
+##  {data-background=#cbcba1}
+
+```{r dendograma, warning=FALSE}
+hc <- hclust(d.brcz, 
+            method = 'ward.D2')
+plot(hc , 
+     labels = row.names(dtk.brcz),
+     cex = 0.7,
+     main = 'Multzokatze determinista',
+     sub = 'Warden araberakoa')
+rect.hclust(tree = hc, k = 3, border = 2)
+
+```
+
+##  {data-background=#cbcba1}
+
+```{r mapa.ward.D2}
+kutri <- cutree(hc, k = 3)
+
+mapi@data$ward2 <- NA
+
+for(i in row.names(dtk.brcz)){
+        # print(i)
+        mapi@data[mapi@data$IZ_EUSKAL==i, 'ward2'] <- kutri[i]
+}
+
+#
+plot(mapi, col=ifelse(is.na(mapi@data$ward2), 1, cols[as.numeric(mapi@data$ward2)]),
+     main = 'Multzokatze determinista', sub = 'Gutxieneko barne bariantza')
+# mapi@data$ward2 <- factor(mapi@data$ward2, levels = levels(dtk.brcz[, 17]))
+legend("bottomleft",
+       legend = c('a', 'b', 'c'),
+       title = 'Multzoak',
+       col = cols[1:3],
+       pch = 20)
+```
+
+## {data-background=#9f9e7f} 
+
+```{r mapa.complete}
+i <- "complete"
+hx <- hclust(d.brcz, method = i)
+kutrix <- cutree(hx, k= 3)
+  for(j in row.names(dtk.brcz)){
+        # print(i)
+        mapi@data[mapi@data$IZ_EUSKAL==j, i] <- kutrix[j]
+  }
+plot(mapi, col=ifelse(is.na(mapi@data[,i]), 1, cols[as.numeric(mapi@data[,i])]),
+     main = 'Multzokatze determinista', sub = i)
+
+```
+
+## {data-background=#9f9e7f} 
+
+```{r mapa.average}
+i <- "average"
+hx <- hclust(d.brcz, method = i)
+kutrix <- cutree(hx, k= 3)
+  for(j in row.names(dtk.brcz)){
+        # print(i)
+        mapi@data[mapi@data$IZ_EUSKAL==j, i] <- kutrix[j]
+  }
+plot(mapi, col=ifelse(is.na(mapi@data[,i]), 1, cols[as.numeric(mapi@data[,i])]),
+     main = 'Multzokatze determinista', sub = i)
+```
+
+## {data-background=#9f9e7f} 
+
+```{r mapa.single}
+i <- "single"
+hx <- hclust(d.brcz, method = i)
+kutrix <- cutree(hx, k= 3)
+  for(j in row.names(dtk.brcz)){
+        # print(i)
+        mapi@data[mapi@data$IZ_EUSKAL==j, i] <- kutrix[j]
+  }
+plot(mapi, col=ifelse(is.na(mapi@data[,i]), 1, cols[as.numeric(mapi@data[,i])]),
+     main = 'Multzokatze determinista', sub = i)
+```
+
+## {data-background=#9f9e7f} 
+
+```{r war.d.mapa}
+i <- "ward.D"
+hx <- hclust(d.brcz, method = i)
+kutrix <- cutree(hx, k= 3)
+  for(j in row.names(dtk.brcz)){
+        # print(i)
+        mapi@data[mapi@data$IZ_EUSKAL==j, i] <- kutrix[j]
+  }
+plot(mapi, col=ifelse(is.na(mapi@data[,i]), 1, cols[as.numeric(mapi@data[,i])]),
+     main = 'Multzokatze determinista', sub = i)
+```
+
+---
+
+---
+
+---
+
+
+# Eskalatze Dimentsio Anitza
+
+# MDS
+
+##  {data-background=#ffbfc6}
+
+
+```{r mds.2d}
+## MDS
+mds.bcrz <- cmdscale(d.brcz, k = 3)
+```
+
+```{r}
+## Koloreak
+col.mds <- rgb(rescale(1-mds.bcrz[,], to = c(0, 1)))
+```
+
+```{r}
+## Irudiak ---------------------------
+## 2D
+plot(mds.bcrz[,1:2], col = col.mds, pch = 20, cex = 2.5)
+text(mds.bcrz[,1:2], labels = row.names(mds.bcrz), col = 'gray40', cex = 0.7)
+```
+
+# 3D (MDS)  {data-background=#fdddca}
+
+##  {data-background=#fdddca}
+
+```{r mds.3d, fig.width=8, fig.height=8}
+# MDS 3D
+x <- mds.bcrz[,1]
+y <- mds.bcrz[,2]
+z <- mds.bcrz[,3]
+
+col.mds <- rescale(1-mds.bcrz[,], to = c(0, 1))
+
+sct3d <- scatterplot3d(x,
+                       y,
+                       z,
+                       color = rgb(col.mds),
+                       pch = 19,
+                       type = 'h', # c('p', 'h', 'l')
+                       # main = "Arratiako hizkerak eta batua 3D errepresantazioan",
+                       xlab = 'MDS-1',
+                       ylab = 'MDS-2',
+                       zlab = 'MDS-3')
+s3d.coords <-sct3d$xyz.convert(x,y,z)
+text(s3d.coords$x,
+     s3d.coords$y,
+     labels = row.names(mds.bcrz),
+     col = 'gray40',
+     cex = 0.7,
+     pos = 4)
+title(main = 'Bourciezen datuen esklatze multidimentsionala (MDS)', 
+      sub = 'RIV distantzia jaccard indizearekin erabilita')
+```
+
+### ... eta interaktiboki  {data-background=#ebe1c9}
+
+```{r mds.3d.interak, fig.width=10, fig.height=10, fig.align='center', fig.cap='MDS 3D interaktiboa'}
+try(rgl.close(), silent = TRUE)
+plot3d(x, y, z, 
+       xlab = "x", ylab = "y", zlab = "z", type = 's',
+          pch = 20, 
+          size = 1,
+       col = rgb(col.mds)
+       ) 
+rgl.texts(x = x,
+       y = y,
+       z = z,
+       text = row.names(mds.bcrz),
+       col = 'grey20',
+       cex = 1,
+       add = T)
+# aspect3d("iso")
+# Change view
+view3d(theta = 30, phi = -40, zoom = 0.5)
+rglwidget()
+```
+
+## Mapan 3D  {data-background=#ece2c6}
+
+Aurreko errepresentazioko dimentsioak koloreetan ere egin dira, horietxek, koloreen araberako irudikapenak maparatu daitezke, dagozkien herrien arabera koloreak emanaz; horixe egiten da hurrengo mapan.
+
+```{r mds.mapa}
+df <- data.frame(cbind(mds.bcrz, col.mds))
+
+mapi@data$col.mds.r <- 0
+mapi@data$col.mds.g <- 0
+mapi@data$col.mds.b <- 0
+
+for(i in row.names(df)){
+        # print(i)
+        mapi@data[mapi@data$IZ_EUSKAL==i, "col.mds.r"] <- df[i, 4]
+        mapi@data[mapi@data$IZ_EUSKAL==i, "col.mds.g"] <- df[i, 5]
+        mapi@data[mapi@data$IZ_EUSKAL==i, "col.mds.b"] <- df[i, 6]
+        
+}
+
+plot(mapi, col = rgb(mapi@data$col.mds.r,
+                     mapi@data$col.mds.g,
+                     mapi@data$col.mds.b),
+     main = 'Bourciezen datuen esklatze multidimentsionala (MDS) maparatuta')
+legend("bottomleft",
+       legend = c('1. MDS dim', '2. MDS dim', '3. MDS dim'),
+       title = 'MDS dimentsioak',
+       col = c(2:4),
+       pch = 20)
+```
+
+
+## Slide with Bullets {data-background=#B22222}
+
+- Bullet 1
+- Bullet 2
+- Bullet 3
+
+## Slide with R Code and Output {data-background=#DC143C}
