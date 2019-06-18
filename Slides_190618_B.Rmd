@@ -806,3 +806,9 @@ knitr::kable(na.in.ind[1:8], col.names = 'hutsuneak',
 ## Mila esker {data-background=#6a6a6a}
 
 ### @JuanAbasolo
+
+<small>
+
+### [\[bloga\]](https://juanabasolo.netlify.com/) [\[bidean\]](https://juanabasolo.github.io/Baiona19/MCA_analisi_azaldua.html)
+
+<\small>
