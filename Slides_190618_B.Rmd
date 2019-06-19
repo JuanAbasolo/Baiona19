@@ -114,7 +114,7 @@ cols <- brewer.pal(8, 'Set1')
 
 # Oinarrizkoak  {data-background=#dddddd}
 
-## a {data-background=#dddddd}
+## {data-background=#dddddd}
 
 ```{r inor, echo=FALSE}
 ##  Inor izenordain zehaztugabea 
@@ -769,6 +769,8 @@ text(s3d.coords$x,
 
 ## Hipotesia {data-background=#cc5731}
 
+## {data-background=#cc5731}
+
 ```{r fig.cap='Balio galduen presentzia irudikatzen duen mapa'}
 
 na.in.ind <- rowSums(is.na(dtk.brcz))%>%sort( decreasing = TRUE)
@@ -809,6 +811,6 @@ knitr::kable(na.in.ind[1:8], col.names = 'hutsuneak',
 
 <small>
 
-### [\[bloga\]](https://juanabasolo.netlify.com/) [\[bidean\]](https://juanabasolo.github.io/Baiona19/MCA_analisi_azaldua.html)
+### [bloga](https://juanabasolo.netlify.com/) \t [bidean](https://juanabasolo.github.io/Baiona19/MCA_analisi_azaldua.html)
 
 <\small>
